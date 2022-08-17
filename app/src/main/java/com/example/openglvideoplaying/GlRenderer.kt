@@ -68,79 +68,14 @@ class GlRenderer(val context: Context, val uri: Uri) : GLSurfaceView.Renderer,
     }
 
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {
-        mProgram = createProgram(ShaderSourceCode.mVertexShader, ShaderSourceCode.mFragmentShader)
-        if (mProgram == 0) {
-            return
-        }
-        maPositionHandle = glGetAttribLocation(mProgram ?: 0, "aPosition")
-        checkGlError("glGetAttribLocation aPosition")
-        if (maPositionHandle == -1) {
-            throw RuntimeException(
-                "Could not get attrib location for aPosition");
-        }
-        maTextureHandle = glGetAttribLocation(mProgram ?: 0, "aTextureCoord")
-        checkGlError("glGetAttribLocation aTextureCoord")
-        if (maTextureHandle == -1) {
-            throw RuntimeException("Could not get attrib location for aTextureCoord")
-        }
-        muMVPMatrixHandle = glGetUniformLocation(mProgram ?: 0, "uMvpMatrix")
-        checkGlError("glGetUniformLocation uMVPMatrix")
-        if (muMVPMatrixHandle == -1) {
-            throw RuntimeException(
-                "Could not get attrib location for uMVPMatrix")
-        }
 
-        muSTMatrixHandle = glGetUniformLocation(mProgram ?: 0, "uSTMatrix")
-        checkGlError("glGetUniformLocation uSTMatrix")
-        if (muSTMatrixHandle == -1) {
-            throw RuntimeException("Could not get attrib location for uSTMatrix")
-        }
-
-        val textures = IntArray(1)
-        glGenTextures(1, textures, 0)
-
-        mTextureId = textures[0]
-        glBindTexture(GL_TEXTURE_EXTERNAL_OES, mTextureId ?: 0)
-        checkGlError("glBindTexture mTextureID")
-
-        glTexParameterf(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_NEAREST.toFloat())
-        glTexParameterf(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_LINEAR.toFloat())
-
-        mSurface = SurfaceTexture(mTextureId ?: 0)
-        mSurface?.setOnFrameAvailableListener(this)
-
-        val surface = Surface(mSurface)
-
-        mMediaPlayer = MediaPlayer()
-
-        if (uri != null) {
-            try {
-                mMediaPlayer?.setDataSource(context, uri)
-            } catch (ex: IllegalArgumentException) {
-                ex.printStackTrace()
-            } catch (e: SecurityException) {
-                e.printStackTrace()
-            } catch (e: IllegalStateException) {
-                e.printStackTrace()
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-        }
-        mMediaPlayer?.setSurface(surface)
-        surface.release()
-
-        try {
-            mMediaPlayer?.prepare()
-
-        } catch (e: IOException) {
-            Log.e(TAG, "media player prepare failed");
-        }
-
-        synchronized(this) {
-            updateSurface = false
-        }
-        mMediaPlayer?.start()
     }
+
+    fun createProgram (){
+
+    }
+
+
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
         glViewport(0, 0, width, height)
