@@ -17,7 +17,7 @@ import java.nio.FloatBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class GlRenderer(val context: Context, val uri: Uri) : GLSurfaceView.Renderer,
+class GlRenderer(private val context: Context, private val uri: Uri) : GLSurfaceView.Renderer,
     SurfaceTexture.OnFrameAvailableListener {
 
     private val TAG = "VideoRender"
@@ -154,6 +154,7 @@ class GlRenderer(val context: Context, val uri: Uri) : GLSurfaceView.Renderer,
             if (updateSurface) {
                 mSurface?.updateTexImage()
                 mSurface?.getTransformMatrix(mSTMatrix)
+
                 updateSurface = false
             } else {
                 return
