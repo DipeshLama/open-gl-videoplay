@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
 //            VideoSurfaceView(this, File("/Internal storage/SHAREit/videos/TaudahaVideo.mp4"))
         videoSurfaceView =
             VideoSurfaceView(this,
-                Uri.parse("android.resource://com.example.openglvideoplaying" + "R.raw.video"))
+                Uri.parse("android.resource://com.example.openglvideoplaying/" + R.raw.video))
 
         binding.constraintLayout.addView(videoSurfaceView, params)
     }

@@ -56,12 +56,14 @@ class GlRenderer(private val context: Context, private val uri: Uri) : GLSurface
     private var mMediaPlayer: MediaPlayer? = null
 
     init {
-        mTriangleVertices = ByteBuffer.allocateDirect(mTriangleVerticesData.size * FLOAT_SIZE_BYTES)
-            .order(ByteOrder.nativeOrder()).asFloatBuffer()
+        mTriangleVertices =
+            ByteBuffer.allocateDirect(mTriangleVerticesData.count() * FLOAT_SIZE_BYTES)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer()
         mTriangleVertices.put(mTriangleVerticesData).position(0)
 
-        mTextureVertices = ByteBuffer.allocateDirect(mTextureVerticesData.size * FLOAT_SIZE_BYTES)
-            .order(ByteOrder.nativeOrder()).asFloatBuffer()
+        mTextureVertices =
+            ByteBuffer.allocateDirect(mTextureVerticesData.count() * FLOAT_SIZE_BYTES)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer()
         mTextureVertices.put(mTextureVerticesData).position(0)
 
         Matrix.setIdentityM(mSTMatrix, 0)
@@ -216,7 +218,7 @@ class GlRenderer(private val context: Context, private val uri: Uri) : GLSurface
     }
 
     private fun loadShader(shaderType: Int, source: String): Int {
-        var shader = glCreateShader(shaderType)
+        val shader = glCreateShader(shaderType)
         if (shader != 0) {
             glShaderSource(shader, source)
             glCompileShader(shader)
@@ -254,7 +256,7 @@ class GlRenderer(private val context: Context, private val uri: Uri) : GLSurface
             val linkStatus = IntArray(1)
 
             glGetProgramiv(program, GL_LINK_STATUS, linkStatus, 0)
-            if (linkStatus[0] != GL_TRUE) {
+            if (linkStatus[0] == 0) {
                 Log.e(TAG, "Could not link program: ")
                 Log.e(TAG, glGetProgramInfoLog(program))
                 glDeleteProgram(program)
