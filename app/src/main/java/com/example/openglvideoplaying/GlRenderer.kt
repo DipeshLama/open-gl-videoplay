@@ -41,12 +41,12 @@ class GlRenderer(private val context: Context, private val uri: Uri) : GLSurface
     private val mSTMatrix = FloatArray(16)
     private val projectionMatrix = FloatArray(16)
 
-    private var mProgram: Int? = null
-    private var mTextureId: Int? = null
-    private var muMVPMatrixHandle: Int? = null
-    private var muSTMatrixHandle: Int? = null
-    private var maPositionHandle: Int? = null
-    private var maTextureHandle: Int? = null
+    private var mProgram = 0
+    private var mTextureId = 0
+    private var muMVPMatrixHandle = 0
+    private var muSTMatrixHandle = 0
+    private var maPositionHandle = 0
+    private var maTextureHandle = 0
 
     private var mSurface: SurfaceTexture? = null
     private var updateSurface = false
@@ -74,25 +74,25 @@ class GlRenderer(private val context: Context, private val uri: Uri) : GLSurface
         if (mProgram == 0) {
             return
         }
-        maPositionHandle = glGetAttribLocation(mProgram ?: 0, "aPosition")
+        maPositionHandle = glGetAttribLocation(mProgram, "aPosition")
         checkGlError("glGetAttribLocation aPosition")
         if (maPositionHandle == -1) {
             throw RuntimeException(
-                "Could not get attrib location for aPosition");
+                "Could not get attrib location for aPosition")
         }
-        maTextureHandle = glGetAttribLocation(mProgram ?: 0, "aTextureCoord")
+        maTextureHandle = glGetAttribLocation(mProgram, "aTextureCoord")
         checkGlError("glGetAttribLocation aTextureCoord")
         if (maTextureHandle == -1) {
             throw RuntimeException("Could not get attrib location for aTextureCoord")
         }
-        muMVPMatrixHandle = glGetUniformLocation(mProgram ?: 0, "uMvpMatrix")
+        muMVPMatrixHandle = glGetUniformLocation(mProgram, "uMvpMatrix")
         checkGlError("glGetUniformLocation uMVPMatrix")
         if (muMVPMatrixHandle == -1) {
             throw RuntimeException(
                 "Could not get attrib location for uMVPMatrix")
         }
 
-        muSTMatrixHandle = glGetUniformLocation(mProgram ?: 0, "uSTMatrix")
+        muSTMatrixHandle = glGetUniformLocation(mProgram, "uSTMatrix")
         checkGlError("glGetUniformLocation uSTMatrix")
         if (muSTMatrixHandle == -1) {
             throw RuntimeException("Could not get attrib location for uSTMatrix")
@@ -102,13 +102,13 @@ class GlRenderer(private val context: Context, private val uri: Uri) : GLSurface
         glGenTextures(1, textures, 0)
 
         mTextureId = textures[0]
-        glBindTexture(GL_TEXTURE_EXTERNAL_OES, mTextureId ?: 0)
+        glBindTexture(GL_TEXTURE_EXTERNAL_OES, mTextureId)
         checkGlError("glBindTexture mTextureID")
 
         glTexParameterf(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_NEAREST.toFloat())
         glTexParameterf(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_LINEAR.toFloat())
 
-        mSurface = SurfaceTexture(mTextureId ?: 0)
+        mSurface = SurfaceTexture(mTextureId)
         mSurface?.setOnFrameAvailableListener(this)
 
         val surface = Surface(mSurface)
@@ -135,7 +135,7 @@ class GlRenderer(private val context: Context, private val uri: Uri) : GLSurface
             mMediaPlayer?.prepare()
 
         } catch (e: IOException) {
-            Log.e(TAG, "media player prepare failed");
+            Log.e(TAG, "media player prepare failed")
         }
 
         synchronized(this) {
@@ -165,14 +165,14 @@ class GlRenderer(private val context: Context, private val uri: Uri) : GLSurface
 
         glClearColor(225.0f, 225.0f, 225.0f, 1.0f)
         glClear(GL_DEPTH_BUFFER_BIT or GL_COLOR_BUFFER_BIT)
-        glUseProgram(mProgram ?: 0)
+        glUseProgram(mProgram)
         checkGlError("glUseProgram")
 
         glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_EXTERNAL_OES, mTextureId ?: 0)
+        glBindTexture(GL_TEXTURE_EXTERNAL_OES, mTextureId)
 
         mTriangleVertices.position(TRIANGLE_VERTICES_DATA_POS_OFFSET)
-        glVertexAttribPointer(maPositionHandle ?: 0,
+        glVertexAttribPointer(maPositionHandle,
             3,
             GL_FLOAT,
             false,
@@ -180,11 +180,11 @@ class GlRenderer(private val context: Context, private val uri: Uri) : GLSurface
             mTriangleVertices)
 
         checkGlError("glVertexAttribPointer maPosition")
-        glEnableVertexAttribArray(maPositionHandle ?: 0)
+        glEnableVertexAttribArray(maPositionHandle)
         checkGlError("glEnableVertexAttribArray maPositionHandle")
 
         mTextureVertices.position(TRIANGLE_VERTICES_DATA_UV_OFFSET)
-        glVertexAttribPointer(maTextureHandle ?: 0,
+        glVertexAttribPointer(maTextureHandle,
             2,
             GL_FLOAT,
             false,
@@ -192,13 +192,13 @@ class GlRenderer(private val context: Context, private val uri: Uri) : GLSurface
             mTextureVertices)
 
         checkGlError("glVertexAttribPointer maTextureHandle")
-        glEnableVertexAttribArray(maTextureHandle ?: 0)
+        glEnableVertexAttribArray(maTextureHandle)
         checkGlError("glEnableVertexAttribArray maTextureHandle")
 
         Matrix.setIdentityM(mMVPMatrix, 0)
-        glUniformMatrix4fv(muMVPMatrixHandle ?: 0, 1, false, mMVPMatrix,
+        glUniformMatrix4fv(muMVPMatrixHandle, 1, false, mMVPMatrix,
             0)
-        glUniformMatrix4fv(muSTMatrixHandle ?: 0, 1, false, mSTMatrix, 0)
+        glUniformMatrix4fv(muSTMatrixHandle, 1, false, mSTMatrix, 0)
 
         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4)
         checkGlError("glDrawArrays")
