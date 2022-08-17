@@ -2,7 +2,9 @@ package com.example.openglvideoplaying
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.SurfaceTexture
 import android.net.Uri
+import android.opengl.GLSurfaceView
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -17,7 +19,7 @@ import androidx.core.content.ContextCompat
 import com.example.openglvideoplaying.databinding.ActivityMainBinding
 import java.io.File
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListener {
 
     private lateinit var videoSurfaceView: VideoSurfaceView
     private lateinit var binding: ActivityMainBinding
@@ -29,15 +31,10 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         requestPermission()
-
-        val params = ConstraintLayout.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
-//        videoSurfaceView =
-//            VideoSurfaceView(this, File("/Internal storage/SHAREit/videos/TaudahaVideo.mp4"))
-        videoSurfaceView =
-            VideoSurfaceView(this,
-                Uri.parse("android.resource://com.example.openglvideoplaying" + "R.raw.video"))
-
-        binding.constraintLayout.addView(videoSurfaceView, params)
+        videoSurfaceView = VideoSurfaceView(this)
+        videoSurfaceView.setEGLContextClientVersion(2)
+        videoSurfaceView.setRenderer(GlRenderer(this, this))
+        videoSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -80,5 +77,12 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Dismiss") { _, _ ->
             }
             .show()
+    }
+
+    override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
+        videoSurfaceView.queueEvent{
+            surfaceTexture?.updateTexImage()
+            videoSurfaceView.requestRender()
+        }
     }
 }
