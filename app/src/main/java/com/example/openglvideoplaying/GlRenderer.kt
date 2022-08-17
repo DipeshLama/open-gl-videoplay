@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.SurfaceTexture
 import android.media.MediaPlayer
 import android.net.Uri
+import android.opengl.GLES11Ext
 import android.opengl.GLES20.*
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
@@ -55,6 +56,13 @@ class GlRenderer(val context: Context, val uri: Uri) : GLSurfaceView.Renderer,
 
     private var mMediaPlayer: MediaPlayer? = null
 
+    //New
+    private var mProgramHandle : Int? = null
+    private var vPositionLoc : Int? = null
+    private var texCoordLoc : Int? = null
+    private var textureLoc : Int? = null
+    private var textureId : Int? = null
+
     init {
         mTriangleVertices = ByteBuffer.allocateDirect(mTriangleVerticesData.size * FLOAT_SIZE_BYTES)
             .order(ByteOrder.nativeOrder()).asFloatBuffer()
@@ -68,11 +76,48 @@ class GlRenderer(val context: Context, val uri: Uri) : GLSurfaceView.Renderer,
     }
 
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {
+        mProgramHandle = createProgram(ShaderSourceCode.mVertexShader, ShaderSourceCode.mFragmentShader)
+        vPositionLoc = glGetAttribLocation(mProgramHandle?:0, "a_Position")
+        texCoordLoc =glGetAttribLocation(mProgramHandle ?:0, "a_TexCoordinate")
+        textureLoc =glGetUniformLocation(mProgramHandle ?:0, "u_Texture")
+
+        textureId = createOESTextureId()
+        var surfaceTexture = SurfaceTexture(textureId ?:0)
+
+
     }
 
-    fun createProgram (){
+    fun createOESTextureId(): Int {
+        val textures = IntArray(1)
+        glGenTextures(1, textures, 0)
+        checkGlError("texture generate")
+        glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textures[0])
+        checkGlError("texture bind")
 
+        glTexParameterf(
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GL_TEXTURE_MIN_FILTER,
+            GL_LINEAR.toFloat()
+        )
+        glTexParameterf(
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GL_TEXTURE_MAG_FILTER,
+            GL_LINEAR.toFloat()
+        )
+        glTexParameteri(
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GL_TEXTURE_WRAP_S,
+            GL_CLAMP_TO_EDGE
+        )
+        glTexParameteri(
+            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GL_TEXTURE_WRAP_T,
+            GL_CLAMP_TO_EDGE
+        )
+
+        return textures[0]
     }
+
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
         glViewport(0, 0, width, height)
