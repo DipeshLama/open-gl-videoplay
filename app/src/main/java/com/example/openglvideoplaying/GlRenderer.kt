@@ -25,13 +25,14 @@ class GlRenderer(
     private val FLOAT_SIZE_BYTES = 4
 
     //New
-    private var mProgramHandle: Int? = null
-    private var vPositionLoc: Int? = null
-    private var texCoordLoc: Int? = null
-    private var textureLoc: Int? = null
-    private var textureId: Int? = null
+    private var mProgramHandle = 0
+    private var vPositionLoc = 0
+    private var texCoordLoc = 0
+    private var textureLoc = 0
+    private var textureId = 0
 
     private var mediaPlayer: MediaPlayer? = null
+
     private var vertexBuffer = arrayToBuffer(
         floatArrayOf(
             -1.0f, 1.0f, 0.0f,  // top left
@@ -48,31 +49,19 @@ class GlRenderer(
             1.0f, 0.0f
         )
     )
-    var index = shortArrayOf(3, 2, 0, 0, 1, 2)
-    val indexBuffer = shortArrayToBuffer(index)
-
-
-//    init {
-//        mTriangleVertices = ByteBuffer.allocateDirect(mTriangleVerticesData.size * FLOAT_SIZE_BYTES)
-//            .order(ByteOrder.nativeOrder()).asFloatBuffer()
-//        mTriangleVertices.put(mTriangleVerticesData).position(0)
-//
-//        mTextureVertices = ByteBuffer.allocateDirect(mTextureVerticesData.size * FLOAT_SIZE_BYTES)
-//            .order(ByteOrder.nativeOrder()).asFloatBuffer()
-//        mTextureVertices.put(mTextureVerticesData).position(0)
-//
-//        Matrix.setIdentityM(mSTMatrix, 0)
-//    }
+    private var index = shortArrayOf(3, 2, 0, 0, 1, 2)
+    private val indexBuffer = shortArrayToBuffer(index)
 
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {
         mProgramHandle =
             createProgram(ShaderSourceCode.mVertexShader, ShaderSourceCode.mFragmentShader)
-        vPositionLoc = glGetAttribLocation(mProgramHandle ?: 0, "a_Position")
-        texCoordLoc = glGetAttribLocation(mProgramHandle ?: 0, "a_TexCoordinate")
-        textureLoc = glGetUniformLocation(mProgramHandle ?: 0, "u_Texture")
+        vPositionLoc = glGetAttribLocation(mProgramHandle, "a_Position")
+        texCoordLoc = glGetAttribLocation(mProgramHandle , "a_TexCoordinate")
+        textureLoc = glGetUniformLocation(mProgramHandle, "u_Texture")
 
         textureId = createOESTextureId()
-        val surfaceTexture = SurfaceTexture(textureId ?: 0)
+
+        val surfaceTexture = SurfaceTexture(textureId)
         surfaceTexture.setOnFrameAvailableListener(frameAvailableListener)
         mediaPlayer = MediaPlayer()
 //        mediaPlayer?.setAudioStreamType(AudioManager.STREAM_MUSIC)
@@ -86,41 +75,41 @@ class GlRenderer(
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
-        glViewport(0, 0, width, height)
+//        glViewport(0, 0, width, height)
 //        Matrix.frustumM(projectionMatrix, 0, -1.0f, 1.0f, -1.0f, 1.0f,
 //            1.0f, 10.0f)
     }
 
     override fun onDrawFrame(p0: GL10?) {
-        glUseProgram(mProgramHandle ?: 0)
+        glUseProgram(mProgramHandle)
 
         //set vertex data
-        glEnableVertexAttribArray(vPositionLoc ?: 0)
-        glVertexAttribPointer(vPositionLoc ?: 0, 3, GL_FLOAT, false, 0, vertexBuffer)
+        glEnableVertexAttribArray(vPositionLoc)
+        glVertexAttribPointer(vPositionLoc, 3, GL_FLOAT, false, 0, vertexBuffer)
 
         //set texture vertex data
         texBuffer.position(0)
-        glEnableVertexAttribArray(texCoordLoc ?: 0)
-        glVertexAttribPointer(texCoordLoc ?: 0, 2, GL_FLOAT, false, 0, texBuffer)
+        glEnableVertexAttribArray(texCoordLoc)
+        glVertexAttribPointer(texCoordLoc, 2, GL_FLOAT, false, 0, texBuffer)
 
         //set texture
         glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, textureId ?: 0)
-        glUniform1i(textureLoc ?: 0, 0)
+        glBindTexture(GL_TEXTURE_2D, textureId)
+        glUniform1i(textureLoc, 0)
 
-        glDrawElements(GL_TRIANGLES,index.size, GL_UNSIGNED_SHORT, indexBuffer)
+        glDrawElements(GL_TRIANGLES, index.size, GL_UNSIGNED_SHORT, indexBuffer)
     }
 
-    private fun checkGlError(op: String) {
-        var error: Int
-        while (glGetError().also { error = it } != GL_NO_ERROR) {
-            Log.e(TAG, "$op: glError $error")
-            throw RuntimeException("$op: glError $error")
-        }
-    }
+//    private fun checkGlError(op: String) {
+//        var error: Int
+//        while (glGetError().also { error = it } != GL_NO_ERROR) {
+//            Log.e(TAG, "$op: glError $error")
+//            throw RuntimeException("$op: glError $error")
+//        }
+//    }
 
     private fun loadShader(shaderType: Int, source: String): Int {
-        val shader = glCreateShader(shaderType)
+        var shader = glCreateShader(shaderType)
         if (shader != 0) {
             glShaderSource(shader, source)
             glCompileShader(shader)
@@ -130,7 +119,7 @@ class GlRenderer(
                 Log.e(TAG, "Could not compile shader $shaderType:")
                 Log.e(TAG, glGetShaderInfoLog(shader))
                 glDeleteShader(shader)
-                return 0
+                shader = 0
             }
         }
         return shader
@@ -151,9 +140,9 @@ class GlRenderer(
 
         if (program != 0) {
             glAttachShader(program, vertexShader)
-            checkGlError("glAttachShader")
+//            checkGlError("glAttachShader")
             glAttachShader(program, fragmentShader)
-            checkGlError("glAttachShader")
+//            checkGlError("glAttachShader")
             glLinkProgram(program)
             val linkStatus = IntArray(1)
 
@@ -170,15 +159,16 @@ class GlRenderer(
 
     private fun createOESTextureId(): Int {
         val textures = IntArray(1)
+        val texture = textures[0]
         glGenTextures(1, textures, 0)
-        checkGlError("texture generate")
-        glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textures[0])
-        checkGlError("texture bind")
+//        checkGlError("texture generate")
+        glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texture)
+//        checkGlError("texture bind")
 
         glTexParameterf(
             GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
             GL_TEXTURE_MIN_FILTER,
-            GL_LINEAR.toFloat()
+            GL_NEAREST.toFloat()
         )
         glTexParameterf(
             GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
@@ -196,7 +186,7 @@ class GlRenderer(
             GL_CLAMP_TO_EDGE
         )
 
-        return textures[0]
+        return texture
     }
 
     private fun startVideo() {
@@ -212,14 +202,14 @@ class GlRenderer(
     }
 
     private fun arrayToBuffer(ar: FloatArray): FloatBuffer {
-        val floatBuffer = ByteBuffer.allocateDirect(ar.count() * FLOAT_SIZE_BYTES)
+        val floatBuffer = ByteBuffer.allocateDirect(ar.size * FLOAT_SIZE_BYTES)
             .order(ByteOrder.nativeOrder()).asFloatBuffer()
         floatBuffer.put(ar).position(0)
         return floatBuffer
     }
 
     private fun shortArrayToBuffer(ar: ShortArray): ShortBuffer {
-        val shortBuffer = ByteBuffer.allocateDirect(ar.count() * FLOAT_SIZE_BYTES)
+        val shortBuffer = ByteBuffer.allocateDirect(ar.size * FLOAT_SIZE_BYTES)
             .order(ByteOrder.nativeOrder()).asShortBuffer()
         shortBuffer.put(ar).position(0)
         return shortBuffer
