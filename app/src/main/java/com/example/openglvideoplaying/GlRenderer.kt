@@ -7,7 +7,6 @@ import android.media.MediaPlayer
 import android.opengl.GLES11Ext
 import android.opengl.GLES20.*
 import android.opengl.GLSurfaceView
-import android.opengl.Matrix
 import android.util.Log
 import android.view.Surface
 import java.nio.ByteBuffer
