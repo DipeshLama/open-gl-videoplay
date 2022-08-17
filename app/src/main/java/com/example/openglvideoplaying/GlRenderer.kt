@@ -68,14 +68,11 @@ class GlRenderer(val context: Context, val uri: Uri) : GLSurfaceView.Renderer,
     }
 
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {
-
     }
 
     fun createProgram (){
 
     }
-
-
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
         glViewport(0, 0, width, height)
