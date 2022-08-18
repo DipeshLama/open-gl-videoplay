@@ -9,16 +9,4 @@ import java.io.File
 
 class VideoSurfaceView(context: Context) :
     GLSurfaceView(context) {
-//    private var mRenderer: GlRenderer
-//    private var mMediaPlayer: MediaPlayer? = null
-
-
-
-//    override fun onDetachedFromWindow() {
-//        super.onDetachedFromWindow()
-//        if (mMediaPlayer != null) {
-//            mMediaPlayer?.stop()
-//            mMediaPlayer?.release()
-//        }
-//    }
 }

@@ -79,8 +79,6 @@ class GlRenderer(
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
         glViewport(0, 0, width, height)
-//        Matrix.frustumM(projectionMatrix, 0, -1.0f, 1.0f, -1.0f, 1.0f,
-//            1.0f, 10.0f)
     }
 
     override fun onDrawFrame(p0: GL10?) {

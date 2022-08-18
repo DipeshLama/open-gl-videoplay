@@ -29,17 +29,17 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         requestPermission()
-        videoSurfaceView = VideoSurfaceView(this)
+//        videoSurfaceView = VideoSurfaceView(this)
 
-//        binding.glSurfaceView.setEGLContextClientVersion(2)
-//        binding.glSurfaceView.setRenderer(GlRenderer(this, this))
-//        binding.glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
+        binding.glSurfaceView.setEGLContextClientVersion(2)
+        binding.glSurfaceView.setRenderer(GlRenderer(this, this))
+        binding.glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
 
-        videoSurfaceView.setEGLContextClientVersion(3)
-        videoSurfaceView.setRenderer(GlRenderer(this, this))
-        videoSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
-        setContentView(videoSurfaceView)
+//        videoSurfaceView.setEGLContextClientVersion(3)
+//        videoSurfaceView.setRenderer(GlRenderer(this, this))
+//        videoSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -84,17 +84,17 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
             .show()
     }
 
-//    override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
-//        binding.glSurfaceView.queueEvent{
-//            surfaceTexture?.updateTexImage()
-//            binding.glSurfaceView.requestRender()
-//        }
-//    }
-
     override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
-        videoSurfaceView.queueEvent{
+        binding.glSurfaceView.queueEvent{
             surfaceTexture?.updateTexImage()
-            videoSurfaceView.requestRender()
+            binding.glSurfaceView.requestRender()
         }
     }
+
+//    override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
+//        videoSurfaceView.queueEvent{
+//            surfaceTexture?.updateTexImage()
+//            videoSurfaceView.requestRender()
+//        }
+//    }
 }
