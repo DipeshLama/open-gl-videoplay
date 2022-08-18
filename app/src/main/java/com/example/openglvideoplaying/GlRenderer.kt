@@ -3,7 +3,6 @@ package com.example.openglvideoplaying
 import android.content.Context
 import android.graphics.SurfaceTexture
 import android.media.AudioAttributes
-import android.media.AudioManager
 import android.media.MediaPlayer
 import android.opengl.GLES11Ext
 import android.opengl.GLES20.*
@@ -41,8 +40,15 @@ class GlRenderer(
             -1.0f, -1.0f, 0.0f,  // bottom left
             1.0f, -1.0f, 0.0f,  // bottom right
             1.0f, 1.0f, 0.0f  // top right
-        )
-    )
+        ))
+
+    // For rotating in oppositeDirection
+//    private var vertexBuffer = arrayToBuffer(floatArrayOf(
+//        1.0f, 1.0f, 0.0f,  // top left
+//        1.0f, -1.0f, 0.0f,  // bottom left
+//        -1.0f, -1.0f, 0.0f,  // bottom right
+//        -1.0f, 1.0f, 0.0f  // top right
+//    ))
     private var texBuffer = arrayToBuffer(
         floatArrayOf(
             0.0f, 0.0f,
