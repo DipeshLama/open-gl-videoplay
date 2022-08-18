@@ -17,7 +17,7 @@ import java.nio.FloatBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
-class GlRenderer(private val context: Context, private val uri: Uri) : GLSurfaceView.Renderer,
+class GlRenderer(private val context: Context, private val uri: File) : GLSurfaceView.Renderer,
     SurfaceTexture.OnFrameAvailableListener {
 
     private val TAG = "VideoRender"
@@ -87,16 +87,16 @@ class GlRenderer(private val context: Context, private val uri: Uri) : GLSurface
         }
         muMVPMatrixHandle = glGetUniformLocation(mProgram, "uMvpMatrix")
         checkGlError("glGetUniformLocation uMVPMatrix")
-        if (muMVPMatrixHandle == -1) {
-            throw RuntimeException(
-                "Could not get attrib location for uMVPMatrix")
-        }
+//        if (muMVPMatrixHandle == -1) {
+//            throw RuntimeException(
+//                "Could not get attrib location for uMVPMatrix")
+//        }
 
         muSTMatrixHandle = glGetUniformLocation(mProgram, "uSTMatrix")
         checkGlError("glGetUniformLocation uSTMatrix")
-        if (muSTMatrixHandle == -1) {
-            throw RuntimeException("Could not get attrib location for uSTMatrix")
-        }
+//        if (muSTMatrixHandle == -1) {
+//            throw RuntimeException("Could not get attrib location for uSTMatrix")
+//        }
 
         val textures = IntArray(1)
         glGenTextures(1, textures, 0)
@@ -118,7 +118,7 @@ class GlRenderer(private val context: Context, private val uri: Uri) : GLSurface
 
         if (uri != null) {
             try {
-                mMediaPlayer?.setDataSource(context, uri)
+                mMediaPlayer?.setDataSource(uri.absolutePath)
             } catch (ex: IllegalArgumentException) {
                 ex.printStackTrace()
             } catch (e: SecurityException) {

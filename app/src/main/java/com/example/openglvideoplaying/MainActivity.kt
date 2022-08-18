@@ -27,17 +27,18 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
         requestPermission()
 
-        val params = ConstraintLayout.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
-//        videoSurfaceView =
-//            VideoSurfaceView(this, File("/Internal storage/SHAREit/videos/TaudahaVideo.mp4"))
+//        val params = ConstraintLayout.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
         videoSurfaceView =
-            VideoSurfaceView(this,
-                Uri.parse("android.resource://com.example.openglvideoplaying/" + R.raw.video))
+            VideoSurfaceView(this, File("/Internal storage/SHAREit/videos/TaudahaVideo.mp4"))
+//        videoSurfaceView =
+//            VideoSurfaceView(this,
+//                Uri.parse("android.resource://com.example.openglvideoplaying/" + R.raw.video))
 
-        binding.constraintLayout.addView(videoSurfaceView, params)
+//        binding.constraintLayout.addView(videoSurfaceView, params)
+        setContentView(videoSurfaceView)
+
     }
 
     @RequiresApi(Build.VERSION_CODES.M)

@@ -7,7 +7,7 @@ import android.net.Uri
 import android.opengl.GLSurfaceView
 import java.io.File
 
-class VideoSurfaceView(context: Context, uri: Uri) :
+class VideoSurfaceView(context: Context, uri: File) :
     GLSurfaceView(context) {
     private var mRenderer: GlRenderer
     private var mMediaPlayer: MediaPlayer? = null
