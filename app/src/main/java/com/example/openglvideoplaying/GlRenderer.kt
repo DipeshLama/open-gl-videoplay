@@ -49,6 +49,7 @@ class GlRenderer(
 //        -1.0f, -1.0f, 0.0f,  // bottom right
 //        -1.0f, 1.0f, 0.0f  // top right
 //    ))
+
     private var texBuffer = arrayToBuffer(
         floatArrayOf(
             0.0f, 0.0f,
