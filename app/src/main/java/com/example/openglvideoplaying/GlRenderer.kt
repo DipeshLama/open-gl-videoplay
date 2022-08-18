@@ -8,6 +8,7 @@ import android.media.MediaPlayer
 import android.opengl.GLES11Ext
 import android.opengl.GLES20.*
 import android.opengl.GLSurfaceView
+import android.opengl.Matrix
 import android.util.Log
 import android.view.Surface
 import java.nio.ByteBuffer
@@ -25,11 +26,11 @@ class GlRenderer(
     private val TAG = "VideoRender"
     private val FLOAT_SIZE_BYTES = 4
 
-    //New
     private var mProgramHandle = 0
     private var vPositionLoc = 0
     private var texCoordLoc = 0
     private var textureLoc = 0
+    private var mvpMatrixLoc = 0
     private var textureId = 0
 
     private var mediaPlayer: MediaPlayer? = null
@@ -53,12 +54,22 @@ class GlRenderer(
     private var index = shortArrayOf(3, 2, 0, 0, 1, 2)
     private val indexBuffer = shortArrayToBuffer(index)
 
+    var screenWidth: Int = 0
+    var screenHeight: Int = 0
+
+    var videoWidth = 0
+    var videoHeight = 0
+
+    var modelMatrix = FloatArray(16)
+
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {
+        glClearColor(0f, 0f, 0f, 1f)
         mProgramHandle =
             createProgram(ShaderSourceCode.mVertexShader, ShaderSourceCode.mFragmentShader)
         vPositionLoc = glGetAttribLocation(mProgramHandle, "a_Position")
         texCoordLoc = glGetAttribLocation(mProgramHandle, "a_TexCoordinate")
         textureLoc = glGetUniformLocation(mProgramHandle, "u_Texture")
+        mvpMatrixLoc = glGetUniformLocation(mProgramHandle, "mvpMatrix")
 
         textureId = createOESTextureId()
         Log.d(TAG, "textureId:$textureId")
@@ -74,18 +85,55 @@ class GlRenderer(
         mediaPlayer?.setSurface(surface)
 
         startVideo()
+
+        mediaPlayer?.setOnVideoSizeChangedListener { _, width, height ->
+            run {
+                videoWidth = width
+                Log.d(TAG, "videoWidth:$videoWidth")
+
+                videoHeight = height
+                Log.d(TAG, "videoHeight:$videoHeight")
+
+                if (screenWidth > 0 && screenHeight > 0) {
+                    computeMatrix()
+                }
+            }
+        }
+    }
+
+    private fun computeMatrix() {
+        val videoRatio = videoWidth / videoHeight.toFloat()
+        Log.d(TAG, "videoRatio:$videoRatio ")
+        val screenRatio = screenWidth / screenHeight.toFloat()
+        Log.d(TAG, "screenRatio:$screenRatio ")
+
+        Matrix.setIdentityM(modelMatrix, 0)
+        if (videoRatio > screenRatio) {
+            Matrix.scaleM(modelMatrix, 0, 1f, 1 - ((videoRatio - screenRatio) / 2), 1f)
+        } else if (videoRatio < screenRatio) {
+            Matrix.scaleM(modelMatrix, 0, 1 - ((screenRatio - videoRatio) / 2), 1f, 1f)
+        }
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
         glViewport(0, 0, width, height)
+        screenWidth = width
+        Log.d(TAG, "screenWidth:$screenWidth")
+        screenHeight = height
+        Log.d(TAG, "screenHeight:$screenHeight")
+
+        if (videoWidth > 0 && videoHeight > 0) {
+            computeMatrix()
+        }
     }
 
     override fun onDrawFrame(p0: GL10?) {
-        glClear(GL_COLOR_BUFFER_BIT)
+        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
         glUseProgram(mProgramHandle)
 
         //set vertex data
+        vertexBuffer.position(0)
         glEnableVertexAttribArray(vPositionLoc)
         glVertexAttribPointer(vPositionLoc, 3, GL_FLOAT, false, 0, vertexBuffer)
 
@@ -98,6 +146,9 @@ class GlRenderer(
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, textureId)
         glUniform1i(textureLoc, 0)
+
+        glUniformMatrix4fv(mvpMatrixLoc, 1, false, modelMatrix, 0)
+//        Matrix.rotateM(modelMatrix, 0, 45f, 0f, 0f, 1f)
 
         glDrawElements(GL_TRIANGLES, index.size, GL_UNSIGNED_SHORT, indexBuffer)
     }
@@ -117,7 +168,7 @@ class GlRenderer(
         }
         glShaderSource(shader, source)
         glCompileShader(shader)
-        
+
         val compiled = IntArray(1)
         glGetShaderiv(shader, GL_COMPILE_STATUS, compiled, 0)
 

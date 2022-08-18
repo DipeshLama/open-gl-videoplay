@@ -35,7 +35,6 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
         binding.glSurfaceView.setEGLContextClientVersion(2)
         binding.glSurfaceView.setRenderer(GlRenderer(this, this))
         binding.glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
-
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
