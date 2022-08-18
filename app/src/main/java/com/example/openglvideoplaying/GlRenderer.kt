@@ -102,6 +102,7 @@ class GlRenderer(private val context: Context, private val uri: Uri) : GLSurface
         glGenTextures(1, textures, 0)
 
         mTextureId = textures[0]
+        Log.d(TAG, "mTextureId: $mTextureId")
         glBindTexture(GL_TEXTURE_EXTERNAL_OES, mTextureId)
         checkGlError("glBindTexture mTextureID")
 
@@ -236,11 +237,14 @@ class GlRenderer(private val context: Context, private val uri: Uri) : GLSurface
 
     private fun createProgram(vertexSource: String, fragmentSource: String): Int {
         val vertexShader = loadShader(GL_VERTEX_SHADER, vertexSource)
+        Log.d(TAG, "vertexShader:$vertexShader ")
         if (vertexShader == 0) {
             return 0
         }
 
         val fragmentShader = loadShader(GL_FRAGMENT_SHADER, fragmentSource)
+        Log.d(TAG, "fragmentShader:$fragmentShader ")
+
         if (fragmentShader == 0) {
             return 0
         }

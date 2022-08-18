@@ -13,7 +13,7 @@ class VideoSurfaceView(context: Context, uri: Uri) :
     private var mMediaPlayer: MediaPlayer? = null
 
     init {
-        setEGLContextClientVersion(2)
+        setEGLContextClientVersion(3)
         holder.setFormat(PixelFormat.TRANSLUCENT)
         setEGLConfigChooser(8, 8, 8, 8, 16, 0)
         mRenderer = GlRenderer(context, uri)
