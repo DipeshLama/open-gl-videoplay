@@ -3,6 +3,7 @@ package com.example.openglvideoplaying
 import android.content.Context
 import android.graphics.SurfaceTexture
 import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.opengl.GLES11Ext
 import android.opengl.GLES20.*
@@ -17,8 +18,8 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 class GlRenderer(
-    val context: Context,
-    val frameAvailableListener: SurfaceTexture.OnFrameAvailableListener,
+    private val context: Context,
+    private val frameAvailableListener: SurfaceTexture.OnFrameAvailableListener,
 ) : GLSurfaceView.Renderer {
 
     private val TAG = "VideoRender"
@@ -56,10 +57,11 @@ class GlRenderer(
         mProgramHandle =
             createProgram(ShaderSourceCode.mVertexShader, ShaderSourceCode.mFragmentShader)
         vPositionLoc = glGetAttribLocation(mProgramHandle, "a_Position")
-        texCoordLoc = glGetAttribLocation(mProgramHandle , "a_TexCoordinate")
+        texCoordLoc = glGetAttribLocation(mProgramHandle, "a_TexCoordinate")
         textureLoc = glGetUniformLocation(mProgramHandle, "u_Texture")
 
         textureId = createOESTextureId()
+        Log.d(TAG, "textureId:$textureId")
 
         val surfaceTexture = SurfaceTexture(textureId)
         surfaceTexture.setOnFrameAvailableListener(frameAvailableListener)
@@ -71,16 +73,19 @@ class GlRenderer(
 
         val surface = Surface(surfaceTexture)
         mediaPlayer?.setSurface(surface)
+
         startVideo()
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
-//        glViewport(0, 0, width, height)
+        glViewport(0, 0, width, height)
 //        Matrix.frustumM(projectionMatrix, 0, -1.0f, 1.0f, -1.0f, 1.0f,
 //            1.0f, 10.0f)
     }
 
     override fun onDrawFrame(p0: GL10?) {
+        glClear(GL_COLOR_BUFFER_BIT)
+
         glUseProgram(mProgramHandle)
 
         //set vertex data
@@ -110,28 +115,34 @@ class GlRenderer(
 
     private fun loadShader(shaderType: Int, source: String): Int {
         var shader = glCreateShader(shaderType)
-        if (shader != 0) {
-            glShaderSource(shader, source)
-            glCompileShader(shader)
-            val compiled = IntArray(1)
-            glGetShaderiv(shader, GL_COMPILE_STATUS, compiled, 0)
-            if (compiled[0] == 0) {
-                Log.e(TAG, "Could not compile shader $shaderType:")
-                Log.e(TAG, glGetShaderInfoLog(shader))
-                glDeleteShader(shader)
-                shader = 0
-            }
+        if (shader == 0) {
+            return 0
+        }
+        glShaderSource(shader, source)
+        glCompileShader(shader)
+        
+        val compiled = IntArray(1)
+        glGetShaderiv(shader, GL_COMPILE_STATUS, compiled, 0)
+
+        if (compiled[0] == 0) {
+            Log.e(TAG, "Could not compile shader $shaderType:")
+            Log.e(TAG, glGetShaderInfoLog(shader))
+            glDeleteShader(shader)
+            shader = 0
         }
         return shader
     }
 
     private fun createProgram(vertexSource: String, fragmentSource: String): Int {
         val vertexShader = loadShader(GL_VERTEX_SHADER, vertexSource)
+        Log.d(TAG, "vertexShader: $vertexShader")
         if (vertexShader == 0) {
             return 0
         }
 
         val fragmentShader = loadShader(GL_FRAGMENT_SHADER, fragmentSource)
+        Log.d(TAG, "fragmentShader: $fragmentShader")
+
         if (fragmentShader == 0) {
             return 0
         }

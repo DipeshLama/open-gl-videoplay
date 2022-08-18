@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
 //        binding.glSurfaceView.setRenderer(GlRenderer(this, this))
 //        binding.glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
 
-        videoSurfaceView.setEGLContextClientVersion(2)
+        videoSurfaceView.setEGLContextClientVersion(3)
         videoSurfaceView.setRenderer(GlRenderer(this, this))
         videoSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
         setContentView(videoSurfaceView)

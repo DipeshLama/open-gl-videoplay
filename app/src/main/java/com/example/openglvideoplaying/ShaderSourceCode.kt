@@ -12,14 +12,25 @@ object ShaderSourceCode {
                 "}"
 
 
+//    const val mFragmentShader =
+//    "#extension GL_OES_EGL_image_external : require" +
+//    "precision mediump float;" +
+//
+//    "uniform samplerExternalOES u_Texture;" +
+//    "varying vec2 v_TexCoord;" +
+//
+//    "void main() {"+
+//        "gl_FragColor = texture2D(u_Texture, v_TexCoord);" +
+//    "}"
+
     const val mFragmentShader =
-    "#extension GL_OES_EGL_image_external : require" +
-    "precision mediump float;" +
-
-    "uniform samplerExternalOES u_Texture;" +
-    "varying vec2 v_TexCoord;" +
-
-    "void main() {"+
-        "gl_FragColor = texture2D(u_Texture, v_TexCoord);" +
-    "}"
+        ("#extension GL_OES_EGL_image_external : require\n"
+            + "precision mediump float;\n"
+            + "varying vec2 v_TexCoord;\n"
+            + "uniform samplerExternalOES u_Texture;\n"
+            + "void main() {\n"
+            + "  gl_FragColor = texture2D(u_Texture, v_TexCoord);\n"
+            + "}\n")
 }
+
+
