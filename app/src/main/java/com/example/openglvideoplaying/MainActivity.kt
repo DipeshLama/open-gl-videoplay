@@ -31,15 +31,11 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         requestPermission()
-//        videoSurfaceView = VideoSurfaceView(this)
 
         binding.glSurfaceView.setEGLContextClientVersion(2)
         binding.glSurfaceView.setRenderer(GlRenderer(this, this))
         binding.glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
 
-//        videoSurfaceView.setEGLContextClientVersion(3)
-//        videoSurfaceView.setRenderer(GlRenderer(this, this))
-//        videoSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
     }
 
     @RequiresApi(Build.VERSION_CODES.M)

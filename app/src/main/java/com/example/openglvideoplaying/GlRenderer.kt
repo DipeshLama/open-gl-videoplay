@@ -66,7 +66,6 @@ class GlRenderer(
         val surfaceTexture = SurfaceTexture(textureId)
         surfaceTexture.setOnFrameAvailableListener(frameAvailableListener)
         mediaPlayer = MediaPlayer()
-//        mediaPlayer?.setAudioStreamType(AudioManager.STREAM_MUSIC)
 
         mediaPlayer?.setAudioAttributes(AudioAttributes.Builder()
             .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
