@@ -1,27 +1,30 @@
 package com.example.openglvideoplaying
 
 import android.content.Context
+import android.graphics.Shader
 import android.graphics.SurfaceTexture
 import android.media.AudioAttributes
-import android.media.AudioManager
 import android.media.MediaPlayer
 import android.opengl.GLES11Ext
+import android.opengl.GLES20
 import android.opengl.GLES20.*
-import android.opengl.GLSurfaceView
+import android.opengl.Matrix
 import android.util.Log
 import android.view.Surface
+import com.google.vrtoolkit.cardboard.CardboardView
+import com.google.vrtoolkit.cardboard.Eye
+import com.google.vrtoolkit.cardboard.HeadTransform
+import com.google.vrtoolkit.cardboard.Viewport
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 import javax.microedition.khronos.egl.EGLConfig
-import javax.microedition.khronos.opengles.GL10
 
-class GlRenderer(
+class VrVideoRenderer(
     private val context: Context,
     private val frameAvailableListener: SurfaceTexture.OnFrameAvailableListener,
-) : GLSurfaceView.Renderer {
-
+) : CardboardView.StereoRenderer {
     private val FLOAT_SIZE_BYTES = 4
 
     //New
@@ -35,10 +38,10 @@ class GlRenderer(
 
     private var vertexBuffer = arrayToBuffer(
         floatArrayOf(
-            -1.0f, 1.0f, 0.0f,  // top left
-            -1.0f, -1.0f, 0.0f,  // bottom left
-            1.0f, -1.0f, 0.0f,  // bottom right
-            1.0f, 1.0f, 0.0f  // top right
+            -1.0f, 1.0f, -1.0f,  // top left
+            -1.0f, -1.0f, -1.0f,  // bottom left
+            1.0f, -1.0f, -1.0f,  // bottom right
+            1.0f, 1.0f, -1.0f  // top right
         )
     )
     private var texBuffer = arrayToBuffer(
@@ -52,36 +55,39 @@ class GlRenderer(
     private var index = shortArrayOf(3, 2, 0, 0, 1, 2)
     private val indexBuffer = shortArrayToBuffer(index)
 
-    override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {
-        mProgramHandle =
-            createAndLinkProgram(ShaderSourceCode.mVertexShader, ShaderSourceCode.mFragmentShader)
-        vPositionLoc = glGetAttribLocation(mProgramHandle, "a_Position")
-        texCoordLoc = glGetAttribLocation(mProgramHandle, "a_TexCoordinate")
-        textureLoc = glGetUniformLocation(mProgramHandle, "u_Texture")
+    private val Z_NEAR = 0.1f
+    private val Z_FAR = 100.0f
+    private val CAMERA_Z = 0.01f
 
-        textureId = createOESTextureId()
-        Log.d(TAG, "textureId:$textureId")
+    private val camera = FloatArray(16)
+    private val view = FloatArray(16)
+    private val modelViewProjection = FloatArray(16)
 
-        val surfaceTexture = SurfaceTexture(textureId)
-        surfaceTexture.setOnFrameAvailableListener(frameAvailableListener)
-        mediaPlayer = MediaPlayer()
+    private val mTransform = FloatArray(16)
+    private val mView = FloatArray(16)
 
-        mediaPlayer?.setAudioAttributes(AudioAttributes.Builder()
-            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+    private var triMVPMatrixParam = 0
 
-        val surface = Surface(surfaceTexture)
-        mediaPlayer?.setSurface(surface)
-
-        startVideo()
+    override fun onNewFrame(p0: HeadTransform?) {
+        // Build the camera matrix and apply it to the ModelView.
+        Matrix.setLookAtM(camera, 0, 0.0f, 0.0f, CAMERA_Z, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f, 0.0f)
     }
 
-    override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
-        glViewport(0, 0, width, height)
-    }
+    override fun onDrawEye(eye: Eye?) {
+        glEnable(GL_DEPTH_TEST)
+        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
-    override fun onDrawFrame(p0: GL10?) {
-        glClear(GL_COLOR_BUFFER_BIT)
+        // Apply the eye transformation to the camera
+        Matrix.multiplyMM(view, 0, eye?.eyeView, 0, camera, 0)
 
+        // Get the perspective transformation
+        val perspective = eye?.getPerspective(Z_NEAR, Z_FAR)
+
+
+        Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, view, 0)
+
+        // use surface and draw frame
         glUseProgram(mProgramHandle)
 
         //set vertex data
@@ -98,7 +104,45 @@ class GlRenderer(
         glBindTexture(GL_TEXTURE_2D, textureId)
         glUniform1i(textureLoc, 0)
 
+        glUniformMatrix4fv(triMVPMatrixParam, 1, false,
+            modelViewProjection, 0)
+
         glDrawElements(GL_TRIANGLES, index.size, GL_UNSIGNED_SHORT, indexBuffer)
+    }
+
+    override fun onFinishFrame(p0: Viewport?) {
+    }
+
+    override fun onSurfaceChanged(width: Int, height: Int) {
+        glViewport(0, 0, width, height)
+    }
+
+    override fun onSurfaceCreated(p0: EGLConfig?) {
+        mProgramHandle =
+            createAndLinkProgram(ShaderSourceCode.mVertexShader, ShaderSourceCode.mFragmentShader)
+        vPositionLoc = glGetAttribLocation(mProgramHandle, "a_Position")
+        texCoordLoc = glGetAttribLocation(mProgramHandle, "a_TexCoordinate")
+        textureLoc = glGetUniformLocation(mProgramHandle, "u_Texture")
+        triMVPMatrixParam = glGetUniformLocation(mProgramHandle, "u_MVP")
+
+        textureId = createOESTextureId()
+        Log.d(TAG, "textureId: $textureId")
+
+        val surfaceTexture = SurfaceTexture(textureId)
+        surfaceTexture.setOnFrameAvailableListener(frameAvailableListener)
+        mediaPlayer = MediaPlayer()
+
+        mediaPlayer?.setAudioAttributes(AudioAttributes.Builder()
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+
+        val surface = Surface(surfaceTexture)
+        mediaPlayer?.setSurface(surface)
+
+        startVideo()
+    }
+
+    override fun onRendererShutdown() {
+
     }
 
     private fun createOESTextureId(): Int {
@@ -129,7 +173,6 @@ class GlRenderer(
             GL_TEXTURE_WRAP_T,
             GL_CLAMP_TO_EDGE
         )
-
         return texture
     }
 
