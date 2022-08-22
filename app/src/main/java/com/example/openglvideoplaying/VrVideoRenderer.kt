@@ -25,7 +25,7 @@ class VrVideoRenderer(
     private val context: Context,
     private val frameAvailableListener: SurfaceTexture.OnFrameAvailableListener,
 ) : CardboardView.StereoRenderer {
-    private val FLOAT_SIZE_BYTES = 4
+    private val FLOAT_PER_BYTES = 4
 
     //New
     private var mProgramHandle = 0
@@ -62,9 +62,6 @@ class VrVideoRenderer(
     private val camera = FloatArray(16)
     private val view = FloatArray(16)
     private val modelViewProjection = FloatArray(16)
-
-    private val mTransform = FloatArray(16)
-    private val mView = FloatArray(16)
 
     private var triMVPMatrixParam = 0
 
@@ -189,14 +186,14 @@ class VrVideoRenderer(
     }
 
     private fun arrayToBuffer(ar: FloatArray): FloatBuffer {
-        val floatBuffer = ByteBuffer.allocateDirect(ar.size * FLOAT_SIZE_BYTES)
+        val floatBuffer = ByteBuffer.allocateDirect(ar.size * FLOAT_PER_BYTES)
             .order(ByteOrder.nativeOrder()).asFloatBuffer()
         floatBuffer.put(ar).position(0)
         return floatBuffer
     }
 
     private fun shortArrayToBuffer(ar: ShortArray): ShortBuffer {
-        val shortBuffer = ByteBuffer.allocateDirect(ar.size * FLOAT_SIZE_BYTES)
+        val shortBuffer = ByteBuffer.allocateDirect(ar.size * FLOAT_PER_BYTES)
             .order(ByteOrder.nativeOrder()).asShortBuffer()
         shortBuffer.put(ar).position(0)
         return shortBuffer
