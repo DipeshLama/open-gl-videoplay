@@ -1,27 +1,13 @@
 package com.example.openglvideoplaying
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.graphics.SurfaceTexture
-import android.net.Uri
 import android.opengl.GLSurfaceView
-import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.view.ViewGroup
-import android.view.WindowManager
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AlertDialog
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
 import com.example.openglvideoplaying.databinding.ActivityMainBinding
-import java.io.File
 
 class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListener {
 
-    private lateinit var videoSurfaceView: VideoSurfaceView
     private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,11 +26,4 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
             binding.glSurfaceView.requestRender()
         }
     }
-
-//    override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
-//        videoSurfaceView.queueEvent{
-//            surfaceTexture?.updateTexImage()
-//            videoSurfaceView.requestRender()
-//        }
-//    }
 }

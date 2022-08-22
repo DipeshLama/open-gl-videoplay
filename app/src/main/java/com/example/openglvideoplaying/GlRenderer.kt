@@ -258,7 +258,7 @@ class GlRenderer(
     private fun startVideo() {
         try {
             mediaPlayer?.reset()
-            val fd = context.assets.openFd("videos/video.mp4")
+            val fd = context.assets.openFd("videos/sample360.mp4")
             mediaPlayer?.setDataSource(fd.fileDescriptor, fd.startOffset, fd.length)
             mediaPlayer?.prepare()
             mediaPlayer?.start()
