@@ -23,60 +23,15 @@ class MainActivity : AppCompatActivity(), SurfaceTexture.OnFrameAvailableListene
 
     private lateinit var videoSurfaceView: VideoSurfaceView
     private lateinit var binding: ActivityMainBinding
-    private var storagePermissionLauncher: ActivityResultLauncher<String>? = null
 
-    @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        requestPermission()
 
         binding.glSurfaceView.setEGLContextClientVersion(2)
         binding.glSurfaceView.setRenderer(GlRenderer(this, this))
         binding.glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
-    }
-
-    @RequiresApi(Build.VERSION_CODES.M)
-    private fun requestPermission() {
-        storagePermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { result ->
-            if (result) {
-
-            } else
-                respondOnUserPermissionAct()
-        }
-        storagePermissionLauncher?.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-    }
-
-    @RequiresApi(Build.VERSION_CODES.M)
-    private fun respondOnUserPermissionAct() {
-        when {
-            ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    == PackageManager.PERMISSION_GRANTED -> {
-
-            }
-
-            shouldShowRequestPermissionRationale
-                (Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            -> displayPermissionRationale()
-
-            else -> respondOnUserPermissionAct()
-        }
-    }
-
-    private fun displayPermissionRationale() {
-        AlertDialog.Builder(this)
-            .setCancelable(false)
-            .setMessage("We need permission in order to fetch music from your device")
-            .setPositiveButton("Grant") { _, _ ->
-                storagePermissionLauncher?.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            }
-            .setNegativeButton("Dismiss") { _, _ ->
-            }
-            .show()
     }
 
     override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
