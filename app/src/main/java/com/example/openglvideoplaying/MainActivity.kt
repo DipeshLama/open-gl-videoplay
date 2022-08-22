@@ -2,7 +2,6 @@ package com.example.openglvideoplaying
 
 import android.graphics.SurfaceTexture
 import android.opengl.GLSurfaceView
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.example.openglvideoplaying.databinding.ActivityMainBinding
 import com.google.vrtoolkit.cardboard.CardboardActivity
