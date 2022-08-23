@@ -25,12 +25,17 @@ class GlRenderer(
     private val TAG = "VideoRender"
     private val FLOAT_SIZE_BYTES = 4
 
+    val SPHERE_SLICES = 180
+    private val SPHERE_INDICES_PER_VERTEX = 1
+    private val SPHERE_RADIUS = 500.0f
+
     private var mProgramHandle = 0
     private var vPositionLoc = 0
     private var texCoordLoc = 0
     private var textureLoc = 0
     private var mvpMatrixLoc = 0
     private var textureId = 0
+    private var uTextureMatrixLocation = 0
 
     private var mediaPlayer: MediaPlayer? = null
 
@@ -68,6 +73,9 @@ class GlRenderer(
     var videoHeight = 0
 
     var modelMatrix = FloatArray(16)
+    var textureMatrix = FloatArray(16)
+
+    private lateinit var sphere: Sphere
 
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {
         glClearColor(0f, 0f, 0f, 1f)
@@ -77,6 +85,9 @@ class GlRenderer(
         texCoordLoc = glGetAttribLocation(mProgramHandle, "a_TexCoordinate")
         textureLoc = glGetUniformLocation(mProgramHandle, "u_Texture")
         mvpMatrixLoc = glGetUniformLocation(mProgramHandle, "mvpMatrix")
+        uTextureMatrixLocation = glGetUniformLocation(mProgramHandle, "uTextureMatrix")
+
+        sphere = Sphere(SPHERE_SLICES, 0.0f, 0.0f, 0.0f, SPHERE_RADIUS, SPHERE_INDICES_PER_VERTEX)
 
         textureId = createOESTextureId()
         Log.d(TAG, "textureId:$textureId")
@@ -93,19 +104,19 @@ class GlRenderer(
 
         startVideo()
 
-        mediaPlayer?.setOnVideoSizeChangedListener { _, width, height ->
-            run {
-                videoWidth = width
-                Log.d(TAG, "videoWidth:$videoWidth")
-
-                videoHeight = height
-                Log.d(TAG, "videoHeight:$videoHeight")
-
-                if (screenWidth > 0 && screenHeight > 0) {
-                    computeMatrix()
-                }
-            }
-        }
+//        mediaPlayer?.setOnVideoSizeChangedListener { _, width, height ->
+//            run {
+//                videoWidth = width
+//                Log.d(TAG, "videoWidth:$videoWidth")
+//
+//                videoHeight = height
+//                Log.d(TAG, "videoHeight:$videoHeight")
+//
+//                if (screenWidth > 0 && screenHeight > 0) {
+//                    computeMatrix()
+//                }
+//            }
+//        }
     }
 
     private fun computeMatrix() {
@@ -124,14 +135,14 @@ class GlRenderer(
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
         glViewport(0, 0, width, height)
-        screenWidth = width
-        Log.d(TAG, "screenWidth:$screenWidth")
-        screenHeight = height
-        Log.d(TAG, "screenHeight:$screenHeight")
-
-        if (videoWidth > 0 && videoHeight > 0) {
-            computeMatrix()
-        }
+//        screenWidth = width
+//        Log.d(TAG, "screenWidth:$screenWidth")
+//        screenHeight = height
+//        Log.d(TAG, "screenHeight:$screenHeight")
+//
+//        if (videoWidth > 0 && videoHeight > 0) {
+//            computeMatrix()
+//        }
     }
 
     override fun onDrawFrame(p0: GL10?) {
@@ -142,31 +153,38 @@ class GlRenderer(
         //set vertex data
         vertexBuffer.position(0)
         glEnableVertexAttribArray(vPositionLoc)
-        glVertexAttribPointer(vPositionLoc, 3, GL_FLOAT, false, 0, vertexBuffer)
+        glVertexAttribPointer(vPositionLoc,
+            3,
+            GL_FLOAT,
+            false,
+            sphere.getVerticesStride(),
+            sphere.getVertices())
 
         //set texture vertex data
         texBuffer.position(0)
         glEnableVertexAttribArray(texCoordLoc)
-        glVertexAttribPointer(texCoordLoc, 2, GL_FLOAT, false, 0, texBuffer)
+        glVertexAttribPointer(texCoordLoc,
+            2,
+            GL_FLOAT,
+            false,
+            sphere.getVerticesStride(),
+            sphere.getVertices().duplicate().position(3))
 
         //set texture
         glActiveTexture(GL_TEXTURE0)
         glBindTexture(GL_TEXTURE_2D, textureId)
         glUniform1i(textureLoc, 0)
 
+        glUniformMatrix4fv(uTextureMatrixLocation, 1, false, textureMatrix, 0)
         glUniformMatrix4fv(mvpMatrixLoc, 1, false, modelMatrix, 0)
-//        Matrix.rotateM(modelMatrix, 0, 45f, 0f, 0f, 1f)
 
-        glDrawElements(GL_TRIANGLES, index.size, GL_UNSIGNED_SHORT, indexBuffer)
+        for (i in 0 until sphere.getNumIndices().size) {
+            glDrawElements(GL_TRIANGLES,
+                sphere.getNumIndices()[i],
+                GL_UNSIGNED_SHORT,
+                sphere.getIndices()[i])
+        }
     }
-
-//    private fun checkGlError(op: String) {
-//        var error: Int
-//        while (glGetError().also { error = it } != GL_NO_ERROR) {
-//            Log.e(TAG, "$op: glError $error")
-//            throw RuntimeException("$op: glError $error")
-//        }
-//    }
 
     private fun loadShader(shaderType: Int, source: String): Int {
         var shader = glCreateShader(shaderType)
@@ -191,6 +209,7 @@ class GlRenderer(
     private fun createProgram(vertexSource: String, fragmentSource: String): Int {
         val vertexShader = loadShader(GL_VERTEX_SHADER, vertexSource)
         Log.d(TAG, "vertexShader: $vertexShader")
+
         if (vertexShader == 0) {
             return 0
         }
