@@ -92,20 +92,6 @@ class GlRenderer(
         mediaPlayer?.setSurface(surface)
 
         startVideo()
-
-        mediaPlayer?.setOnVideoSizeChangedListener { _, width, height ->
-            run {
-                videoWidth = width
-                Log.d(TAG, "videoWidth:$videoWidth")
-
-                videoHeight = height
-                Log.d(TAG, "videoHeight:$videoHeight")
-
-                if (screenWidth > 0 && screenHeight > 0) {
-                    computeMatrix()
-                }
-            }
-        }
     }
 
     private fun computeMatrix() {
@@ -124,14 +110,7 @@ class GlRenderer(
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
         glViewport(0, 0, width, height)
-        screenWidth = width
-        Log.d(TAG, "screenWidth:$screenWidth")
-        screenHeight = height
-        Log.d(TAG, "screenHeight:$screenHeight")
 
-        if (videoWidth > 0 && videoHeight > 0) {
-            computeMatrix()
-        }
     }
 
     override fun onDrawFrame(p0: GL10?) {
@@ -155,18 +134,9 @@ class GlRenderer(
         glUniform1i(textureLoc, 0)
 
         glUniformMatrix4fv(mvpMatrixLoc, 1, false, modelMatrix, 0)
-//        Matrix.rotateM(modelMatrix, 0, 45f, 0f, 0f, 1f)
 
         glDrawElements(GL_TRIANGLES, index.size, GL_UNSIGNED_SHORT, indexBuffer)
     }
-
-//    private fun checkGlError(op: String) {
-//        var error: Int
-//        while (glGetError().also { error = it } != GL_NO_ERROR) {
-//            Log.e(TAG, "$op: glError $error")
-//            throw RuntimeException("$op: glError $error")
-//        }
-//    }
 
     private fun loadShader(shaderType: Int, source: String): Int {
         var shader = glCreateShader(shaderType)
@@ -206,9 +176,9 @@ class GlRenderer(
 
         if (program != 0) {
             glAttachShader(program, vertexShader)
-//            checkGlError("glAttachShader")
+
             glAttachShader(program, fragmentShader)
-//            checkGlError("glAttachShader")
+
             glLinkProgram(program)
             val linkStatus = IntArray(1)
 
