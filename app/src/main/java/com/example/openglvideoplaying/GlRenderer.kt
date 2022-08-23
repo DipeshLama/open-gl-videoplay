@@ -78,9 +78,13 @@ class GlRenderer(
     val mCameraMatrix = FloatArray(16)
     val mMvpMatrix = FloatArray(16)
 
-    val mAngleX = 0f
-    val mAngleY = 0f
-    val mAngleZ = 1f
+    @Volatile
+    var mAngleX = 0f
+    @Volatile
+    var mAngleY = 0f
+    @Volatile
+    var mAngleZ = 1f
+
     val r = 6f
 
     init {
@@ -167,6 +171,7 @@ class GlRenderer(
 
         val surfaceTexture = SurfaceTexture(textureId)
         surfaceTexture.setOnFrameAvailableListener(frameAvailableListener)
+        surfaceTexture.setDefaultBufferSize(100,100)
         mediaPlayer = MediaPlayer()
 
         mediaPlayer?.setAudioAttributes(AudioAttributes.Builder()
@@ -181,10 +186,10 @@ class GlRenderer(
         glViewport(0, 0, width, height)
         if (width < height) {
             val ratio = height * 1f / width
-            Matrix.frustumM(mProjectionMatrix, 0, -1f, 1f, -ratio, ratio, 1f, 1000f)
+            Matrix.frustumM(mProjectionMatrix, 0, -1f, 1f, -ratio, ratio, 1f, 100f)
         } else {
             val ratio = width * 1f / height
-            Matrix.perspectiveM(mProjectionMatrix, 0, 70f, ratio, 1F, 1000f)
+            Matrix.perspectiveM(mProjectionMatrix, 0, 70f, ratio, 1f, 100f)
         }
     }
 
@@ -205,8 +210,8 @@ class GlRenderer(
         glEnableVertexAttribArray(texCoordLoc)
         glVertexAttribPointer(texCoordLoc, 2, GL_FLOAT, false, 0, mUvVertexBuffer)
 
-        //set texture
-//        glBindTexture(GL_TEXTURE_2D, textureId)
+//        set texture
+        glBindTexture(GL_TEXTURE_2D, textureId)
 
         glUniformMatrix4fv(mvpMatrixLoc, 1, false, mMvpMatrix, 0)
         glUniform1i(textureLoc, 0)
