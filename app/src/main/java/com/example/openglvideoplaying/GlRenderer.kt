@@ -47,14 +47,6 @@ class GlRenderer(
             1.0f, 1.0f, 0.0f  // top right
         ))
 
-    // For rotating in oppositeDirection
-//    private var vertexBuffer = arrayToBuffer(floatArrayOf(
-//        1.0f, 1.0f, 0.0f,  // top left
-//        1.0f, -1.0f, 0.0f,  // bottom left
-//        -1.0f, -1.0f, 0.0f,  // bottom right
-//        -1.0f, 1.0f, 0.0f  // top right
-//    ))
-
     private var texBuffer = arrayToBuffer(
         floatArrayOf(
             0.0f, 0.0f,
@@ -75,7 +67,18 @@ class GlRenderer(
     var modelMatrix = FloatArray(16)
     var textureMatrix = FloatArray(16)
 
+    private val videoTextureMatrix = FloatArray(16)
+    private val viewMatrix = FloatArray(16)
+    private val projectionMatrix = FloatArray(16)
+
     private lateinit var sphere: Sphere
+
+    private val DRAG_FRICTION = 0.1f
+    private val INITIAL_PITCH_DEGREES = 90f
+    private val FOVY = 70f
+    private val Z_NEAR = 1f
+    private val Z_FAR = 1000f
+
 
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {
         glClearColor(0f, 0f, 0f, 1f)
@@ -103,20 +106,6 @@ class GlRenderer(
         mediaPlayer?.setSurface(surface)
 
         startVideo()
-
-//        mediaPlayer?.setOnVideoSizeChangedListener { _, width, height ->
-//            run {
-//                videoWidth = width
-//                Log.d(TAG, "videoWidth:$videoWidth")
-//
-//                videoHeight = height
-//                Log.d(TAG, "videoHeight:$videoHeight")
-//
-//                if (screenWidth > 0 && screenHeight > 0) {
-//                    computeMatrix()
-//                }
-//            }
-//        }
     }
 
     private fun computeMatrix() {
@@ -135,14 +124,23 @@ class GlRenderer(
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
         glViewport(0, 0, width, height)
-//        screenWidth = width
-//        Log.d(TAG, "screenWidth:$screenWidth")
-//        screenHeight = height
-//        Log.d(TAG, "screenHeight:$screenHeight")
-//
-//        if (videoWidth > 0 && videoHeight > 0) {
-//            computeMatrix()
-//        }
+        val aspectRatio = (width / height).toFloat()
+        Matrix.perspectiveM(projectionMatrix,
+            0,
+            FOVY,
+            aspectRatio,
+            Z_NEAR,
+           Z_FAR)
+        Matrix.setIdentityM(viewMatrix, 0)
+        // Apply initial rotation
+        // Apply initial rotation
+        Matrix.setRotateM(modelMatrix,
+            0,
+            INITIAL_PITCH_DEGREES,
+            1f,
+            0f,
+            0f)
+
     }
 
     override fun onDrawFrame(p0: GL10?) {
