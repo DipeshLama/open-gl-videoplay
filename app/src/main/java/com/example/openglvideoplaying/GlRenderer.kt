@@ -16,6 +16,9 @@ import java.nio.FloatBuffer
 import java.nio.ShortBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 class GlRenderer(
     private val context: Context,
@@ -30,9 +33,10 @@ class GlRenderer(
     private var texCoordLoc = 0
     private var textureLoc = 0
     private var mvpMatrixLoc = 0
+    private var mTexSamplerHandler = 0
     private var textureId = 0
 
-    private var mediaPlayer: MediaPlayer? = null
+    var mediaPlayer: MediaPlayer? = null
 
     private var vertexBuffer = arrayToBuffer(
         floatArrayOf(
@@ -42,13 +46,6 @@ class GlRenderer(
             1.0f, 1.0f, 0.0f  // top right
         ))
 
-    // For rotating in oppositeDirection
-//    private var vertexBuffer = arrayToBuffer(floatArrayOf(
-//        1.0f, 1.0f, 0.0f,  // top left
-//        1.0f, -1.0f, 0.0f,  // bottom left
-//        -1.0f, -1.0f, 0.0f,  // bottom right
-//        -1.0f, 1.0f, 0.0f  // top right
-//    ))
 
     private var texBuffer = arrayToBuffer(
         floatArrayOf(
@@ -69,10 +66,97 @@ class GlRenderer(
 
     var modelMatrix = FloatArray(16)
 
+    //New variables
+    private val cap = 9
+    var verticals = FloatArray((180 / cap) * (360 / cap) * 6 * 3)
+    private val uvTexVertex = FloatArray((180 / cap) * (360 / cap) * 6 * 2)
+
+    private var verticalsBuffer: FloatBuffer
+    private var mUvVertexBuffer: FloatBuffer
+
+    val mProjectionMatrix = FloatArray(16)
+    val mCameraMatrix = FloatArray(16)
+    val mMvpMatrix = FloatArray(16)
+
+    val mAngleX = 0f
+    val mAngleY = 0f
+    val mAngleZ = 1f
+    val r = 6f
+
+    init {
+        val x = 0f
+        val y = 0f
+        val z = 0f
+
+        var index = 0
+        var index1 = 0
+
+        val d: Double = cap * PI / 180
+
+        var i = 0
+        while (i < 180) {
+            val d1 = i * Math.PI / 180
+            var j = 0
+            while (j < 360) {
+                val d2 = j * Math.PI / 180
+                verticals[index++] = (x + r * sin(d1 + d) * cos(d2 + d)).toFloat()
+                verticals[index++] = (y + r * cos(d1 + d)).toFloat()
+                verticals[index++] = (z + r * sin(d1 + d) * sin(d2 + d)).toFloat()
+
+                uvTexVertex[index1++] = (j + cap) * 1f / 360
+                uvTexVertex[index1++] = (i + cap) * 1f / 180
+
+                verticals[index++] = (x + r * sin(d1) * cos(d2)).toFloat()
+                verticals[index++] = (y + r * cos(d1)).toFloat()
+                verticals[index++] = (z + r * sin(d1) * sin(d2)).toFloat()
+
+                uvTexVertex[index1++] = j * 1f / 360
+                uvTexVertex[index1++] = i * 1f / 180
+
+                verticals[index++] = (x + r * sin(d1) * cos(d2 + d)).toFloat()
+                verticals[index++] = (y + r * cos(d1)).toFloat()
+                verticals[index++] = (z + r * sin(d1) * sin(d2 + d)).toFloat()
+
+                uvTexVertex[index1++] = (j + cap) * 1f / 360
+                uvTexVertex[index1++] = i * 1f / 180
+
+                verticals[index++] = (x + r * sin(d1 + d) * cos(d2 + d)).toFloat()
+                verticals[index++] = (y + r * cos(d1 + d)).toFloat()
+                verticals[index++] = (z + r * sin(d1 + d) * sin(d2 + d)).toFloat()
+
+                uvTexVertex[index1++] = (j + cap) * 1f / 360
+                uvTexVertex[index1++] = (i + cap) * 1f / 180
+
+                verticals[index++] = (x + r * sin(d1 + d) * cos(d2)).toFloat()
+                verticals[index++] = (y + r * cos(d1 + d)).toFloat()
+                verticals[index++] = (z + r * sin(d1 + d) * sin(d2)).toFloat()
+
+                uvTexVertex[index1++] = j * 1f / 360
+                uvTexVertex[index1++] = (i + cap) * 1f / 180
+
+                verticals[index++] = (x + r * sin(d1) * cos(d2)).toFloat()
+                verticals[index++] = (y + r * cos(d1)).toFloat()
+                verticals[index++] = (z + r * sin(d1) * sin(d2)).toFloat()
+
+                uvTexVertex[index1++] = j * 1f / 360
+                uvTexVertex[index1++] = i * 1f / 180
+
+                j += cap
+            }
+            i += cap
+        }
+
+        Log.d(TAG, "vertex: ${verticals.count()}")
+        Log.d(TAG, "UvTEx: ${uvTexVertex.count()}")
+
+        verticalsBuffer = arrayToBuffer(verticals)
+        mUvVertexBuffer = arrayToBuffer(uvTexVertex)
+    }
+
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {
-        glClearColor(0f, 0f, 0f, 1f)
         mProgramHandle =
             createProgram(ShaderSourceCode.mVertexShader, ShaderSourceCode.mFragmentShader)
+
         vPositionLoc = glGetAttribLocation(mProgramHandle, "a_Position")
         texCoordLoc = glGetAttribLocation(mProgramHandle, "a_TexCoordinate")
         textureLoc = glGetUniformLocation(mProgramHandle, "u_Texture")
@@ -90,52 +174,45 @@ class GlRenderer(
 
         val surface = Surface(surfaceTexture)
         mediaPlayer?.setSurface(surface)
-
         startVideo()
-    }
-
-    private fun computeMatrix() {
-        val videoRatio = videoWidth / videoHeight.toFloat()
-        Log.d(TAG, "videoRatio:$videoRatio ")
-        val screenRatio = screenWidth / screenHeight.toFloat()
-        Log.d(TAG, "screenRatio:$screenRatio ")
-
-        Matrix.setIdentityM(modelMatrix, 0)
-        if (videoRatio > screenRatio) {
-            Matrix.scaleM(modelMatrix, 0, 1f, 1 - ((videoRatio - screenRatio) / 2), 1f)
-        } else if (videoRatio < screenRatio) {
-            Matrix.scaleM(modelMatrix, 0, 1 - ((screenRatio - videoRatio) / 2), 1f, 1f)
-        }
     }
 
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
         glViewport(0, 0, width, height)
-
+        if (width < height) {
+            val ratio = height * 1f / width
+            Matrix.frustumM(mProjectionMatrix, 0, -1f, 1f, -ratio, ratio, 1f, 1000f)
+        } else {
+            val ratio = width * 1f / height
+            Matrix.perspectiveM(mProjectionMatrix, 0, 70f, ratio, 1F, 1000f)
+        }
     }
 
     override fun onDrawFrame(p0: GL10?) {
+        Matrix.setLookAtM(mCameraMatrix, 0, 0f, 0f, 0f, mAngleX, mAngleY, mAngleZ, 0f, 1f, 0f)
+
+        Matrix.multiplyMM(mMvpMatrix, 0, mProjectionMatrix, 0, mCameraMatrix, 0)
+
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
 
         glUseProgram(mProgramHandle)
 
         //set vertex data
-        vertexBuffer.position(0)
         glEnableVertexAttribArray(vPositionLoc)
-        glVertexAttribPointer(vPositionLoc, 3, GL_FLOAT, false, 0, vertexBuffer)
+        glVertexAttribPointer(vPositionLoc, 3, GL_FLOAT, false, 12, verticalsBuffer)
 
         //set texture vertex data
-        texBuffer.position(0)
         glEnableVertexAttribArray(texCoordLoc)
-        glVertexAttribPointer(texCoordLoc, 2, GL_FLOAT, false, 0, texBuffer)
+        glVertexAttribPointer(texCoordLoc, 2, GL_FLOAT, false, 0, mUvVertexBuffer)
 
         //set texture
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, textureId)
+//        glBindTexture(GL_TEXTURE_2D, textureId)
+
+        glUniformMatrix4fv(mvpMatrixLoc, 1, false, mMvpMatrix, 0)
         glUniform1i(textureLoc, 0)
 
-        glUniformMatrix4fv(mvpMatrixLoc, 1, false, modelMatrix, 0)
-
-        glDrawElements(GL_TRIANGLES, index.size, GL_UNSIGNED_SHORT, indexBuffer)
+        glDrawArrays(GL_TRIANGLES, 0, (180 / cap) * (360 * cap) * 6)
+        glDisableVertexAttribArray(vPositionLoc)
     }
 
     private fun loadShader(shaderType: Int, source: String): Int {
@@ -197,14 +274,14 @@ class GlRenderer(
         val textures = IntArray(1)
         val texture = textures[0]
         glGenTextures(1, textures, 0)
-//        checkGlError("texture generate")
+        glActiveTexture(GL_TEXTURE0)
+
         glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texture)
-//        checkGlError("texture bind")
 
         glTexParameterf(
             GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
             GL_TEXTURE_MIN_FILTER,
-            GL_NEAREST.toFloat()
+            GL_LINEAR.toFloat()
         )
         glTexParameterf(
             GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
@@ -221,7 +298,6 @@ class GlRenderer(
             GL_TEXTURE_WRAP_T,
             GL_CLAMP_TO_EDGE
         )
-
         return texture
     }
 
