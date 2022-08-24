@@ -9,7 +9,7 @@ object ShaderSourceCode {
                 "attribute vec4 a_TexCoordinate;\n" +
                 "varying vec2 v_TexCoord;\n" +
                 "void main() {\n" +
-                "gl_Position = mvpMatrix * a_Position * vec4(1, -1, 1, 1);\n" +
+                "gl_Position = mvpMatrix * a_Position;\n" +
                 "v_TexCoord = (uTextureMatrix * a_TexCoordinate).xy;\n" +
                 "}")
 

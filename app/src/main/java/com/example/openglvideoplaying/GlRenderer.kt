@@ -23,79 +23,87 @@ class GlRenderer(
 ) : GLSurfaceView.Renderer {
 
     private val TAG = "VideoRender"
-    private val FLOAT_SIZE_BYTES = 4
 
-    val SPHERE_SLICES = 180
-    private val SPHERE_INDICES_PER_VERTEX = 1
-    private val SPHERE_RADIUS = 500.0f
+    private val FLOAT_SIZE_BYTES = 4
+    private val SHORT_SIZE_BYTES = 2
+    private val TRIANGLE_VERTICES_DATA_STRIDE_BYTES = 3 * FLOAT_SIZE_BYTES
+    private val TEXTURE_VERTICES_DATA_STRIDE_BYTES = 2 * FLOAT_SIZE_BYTES
+    private val TRIANGLE_VERTICES_DATA_POS_OFFSET = 0
+    private val TRIANGLE_VERTICES_DATA_UV_OFFSET = 0
 
     private var mProgramHandle = 0
     private var vPositionLoc = 0
     private var texCoordLoc = 0
-    private var textureLoc = 0
     private var mvpMatrixLoc = 0
     private var textureId = 0
     private var uTextureMatrixLocation = 0
 
     private var mediaPlayer: MediaPlayer? = null
 
-    private var vertexBuffer = arrayToBuffer(
-        floatArrayOf(
-            -1.0f, 1.0f, 0.0f,  // top left
-            -1.0f, -1.0f, 0.0f,  // bottom left
-            1.0f, -1.0f, 0.0f,  // bottom right
-            1.0f, 1.0f, 0.0f  // top right
-        ))
+    private lateinit var mIndices: ShortArray
 
-    private var texBuffer = arrayToBuffer(
-        floatArrayOf(
-            0.0f, 0.0f,
-            0.0f, 1.0f,
-            1.0f, 1.0f,
-            1.0f, 0.0f
-        )
-    )
-    private var index = shortArrayOf(3, 2, 0, 0, 1, 2)
-    private val indexBuffer = shortArrayToBuffer(index)
+    private var mSphereVertices: FloatBuffer
+    private var mSphereTextures: FloatBuffer
+    private val mIndexBuffer: ShortBuffer
 
-    var screenWidth: Int = 0
-    var screenHeight: Int = 0
+    private val mSTMatrix = FloatArray(16)
+    private val mMVPMatrix = FloatArray(16)
+    private val mMMatrix = FloatArray(16)
+    private val mProjMatrix = FloatArray(16)
 
-    var videoWidth = 0
-    var videoHeight = 0
+    private lateinit var surfaceTexture: SurfaceTexture
 
-    var modelMatrix = FloatArray(16)
-    var textureMatrix = FloatArray(16)
+    var mCamera = Camera()
 
-    private val videoTextureMatrix = FloatArray(16)
-    private val viewMatrix = FloatArray(16)
-    private val projectionMatrix = FloatArray(16)
+    private var mRatio = 0f
+    private val mFOV = 60.0f
+    private val mNear = 0.1f
+    private val mFar = 10.0f
 
-    private lateinit var sphere: Sphere
+    private val GL_TEXTURE_EXTERNAL_OES = 0x8D65
 
-    private val DRAG_FRICTION = 0.1f
-    private val INITIAL_PITCH_DEGREES = 90f
-    private val FOVY = 70f
-    private val Z_NEAR = 1f
-    private val Z_FAR = 1000f
 
+    init {
+        createSphereBuffer(1.0f, 40, 40)
+        mSphereVertices = arrayToBuffer(Sphere.mVertices)
+        mSphereTextures = arrayToBuffer(Sphere.mUV)
+        mIndexBuffer = shortArrayToBuffer(mIndices)
+        Matrix.setIdentityM(mSTMatrix, 0)
+    }
+
+    private fun createSphereBuffer(fRadius: Float, iRings: Int, iSectors: Int) {
+        var r: Int
+        var s: Int
+        var size_index_indices = 0
+        mIndices = ShortArray((iRings - 1) * (iSectors - 1) * 6)
+        r = 0
+        while (r < iRings - 1) {
+            s = 0
+            while (s < iSectors - 1) {
+                mIndices[size_index_indices++] = (r * iSectors + s).toShort() //(a)
+                mIndices[size_index_indices++] = (r * iSectors + (s + 1)).toShort() //(b)
+                mIndices[size_index_indices++] = ((r + 1) * iSectors + (s + 1)).toShort() // (c)
+                mIndices[size_index_indices++] = (r * iSectors + s).toShort() //(a)
+                mIndices[size_index_indices++] = ((r + 1) * iSectors + (s + 1)).toShort() // (c)
+                mIndices[size_index_indices++] = ((r + 1) * iSectors + s).toShort() //(d)
+                s++
+            }
+            r++
+        }
+    }
 
     override fun onSurfaceCreated(p0: GL10?, p1: EGLConfig?) {
-        glClearColor(0f, 0f, 0f, 1f)
         mProgramHandle =
             createProgram(ShaderSourceCode.mVertexShader, ShaderSourceCode.mFragmentShader)
         vPositionLoc = glGetAttribLocation(mProgramHandle, "a_Position")
         texCoordLoc = glGetAttribLocation(mProgramHandle, "a_TexCoordinate")
-        textureLoc = glGetUniformLocation(mProgramHandle, "u_Texture")
         mvpMatrixLoc = glGetUniformLocation(mProgramHandle, "mvpMatrix")
         uTextureMatrixLocation = glGetUniformLocation(mProgramHandle, "uTextureMatrix")
-
-        sphere = Sphere(SPHERE_SLICES, 0.0f, 0.0f, 0.0f, SPHERE_RADIUS, SPHERE_INDICES_PER_VERTEX)
 
         textureId = createOESTextureId()
         Log.d(TAG, "textureId:$textureId")
 
-        val surfaceTexture = SurfaceTexture(textureId)
+        surfaceTexture = SurfaceTexture(textureId)
         surfaceTexture.setOnFrameAvailableListener(frameAvailableListener)
         mediaPlayer = MediaPlayer()
 
@@ -104,84 +112,65 @@ class GlRenderer(
 
         val surface = Surface(surfaceTexture)
         mediaPlayer?.setSurface(surface)
+        surface.release()
 
         startVideo()
     }
 
-    private fun computeMatrix() {
-        val videoRatio = videoWidth / videoHeight.toFloat()
-        Log.d(TAG, "videoRatio:$videoRatio ")
-        val screenRatio = screenWidth / screenHeight.toFloat()
-        Log.d(TAG, "screenRatio:$screenRatio ")
-
-        Matrix.setIdentityM(modelMatrix, 0)
-        if (videoRatio > screenRatio) {
-            Matrix.scaleM(modelMatrix, 0, 1f, 1 - ((videoRatio - screenRatio) / 2), 1f)
-        } else if (videoRatio < screenRatio) {
-            Matrix.scaleM(modelMatrix, 0, 1 - ((screenRatio - videoRatio) / 2), 1f, 1f)
-        }
-    }
-
     override fun onSurfaceChanged(p0: GL10?, width: Int, height: Int) {
-        glViewport(0, 0, width, height)
-        val aspectRatio = (width / height).toFloat()
-        Matrix.perspectiveM(projectionMatrix,
-            0,
-            FOVY,
-            aspectRatio,
-            Z_NEAR,
-           Z_FAR)
-        Matrix.setIdentityM(viewMatrix, 0)
-        // Apply initial rotation
-        // Apply initial rotation
-        Matrix.setRotateM(modelMatrix,
-            0,
-            INITIAL_PITCH_DEGREES,
-            1f,
-            0f,
-            0f)
+        mRatio = width.toFloat() / height
 
+        glViewport(0, 0, width, height)
+
+        Matrix.perspectiveM(mProjMatrix, 0, mFOV, mRatio, mNear, mFar)
     }
 
     override fun onDrawFrame(p0: GL10?) {
+        // clear buffer
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
+
         glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+
+        surfaceTexture.updateTexImage()
+        surfaceTexture.getTransformMatrix(mSTMatrix)
+
+        glEnable(GL_DEPTH_TEST)
+        glDepthFunc(GL_LESS)
 
         glUseProgram(mProgramHandle)
 
-        //set vertex data
-        vertexBuffer.position(0)
-        glEnableVertexAttribArray(vPositionLoc)
+        glActiveTexture(GL_TEXTURE0)
+        glBindTexture(GL_TEXTURE_EXTERNAL_OES, textureId)
+
+        mSphereVertices.position(TRIANGLE_VERTICES_DATA_POS_OFFSET)
         glVertexAttribPointer(vPositionLoc,
             3,
             GL_FLOAT,
             false,
-            sphere.getVerticesStride(),
-            sphere.getVertices())
+            TRIANGLE_VERTICES_DATA_STRIDE_BYTES,
+            mSphereVertices)
 
-        //set texture vertex data
-        texBuffer.position(0)
+        glEnableVertexAttribArray(vPositionLoc)
+        mSphereTextures.position(TRIANGLE_VERTICES_DATA_UV_OFFSET)
+
+        glVertexAttribPointer(texCoordLoc, 2, GL_FLOAT,
+            false, TEXTURE_VERTICES_DATA_STRIDE_BYTES, mSphereTextures)
         glEnableVertexAttribArray(texCoordLoc)
-        glVertexAttribPointer(texCoordLoc,
-            2,
-            GL_FLOAT,
-            false,
-            sphere.getVerticesStride(),
-            sphere.getVertices().duplicate().position(3))
 
-        //set texture
-        glActiveTexture(GL_TEXTURE0)
-        glBindTexture(GL_TEXTURE_2D, textureId)
-        glUniform1i(textureLoc, 0)
+        Matrix.setIdentityM(mMVPMatrix, 0)
+        Matrix.setIdentityM(mMMatrix, 0)
 
-        glUniformMatrix4fv(uTextureMatrixLocation, 1, false, textureMatrix, 0)
-        glUniformMatrix4fv(mvpMatrixLoc, 1, false, modelMatrix, 0)
+        mCamera.computeLookAtMatrix()
 
-        for (i in 0 until sphere.getNumIndices().size) {
-            glDrawElements(GL_TRIANGLES,
-                sphere.getNumIndices()[i],
-                GL_UNSIGNED_SHORT,
-                sphere.getIndices()[i])
-        }
+        Matrix.multiplyMM(mMVPMatrix, 0, mCamera.getViewMatrix(), 0, mMMatrix, 0)
+        Matrix.multiplyMM(mMMatrix, 0, mProjMatrix, 0, mMVPMatrix, 0)
+
+        glUniformMatrix4fv(mvpMatrixLoc, 1, false, mMVPMatrix, 0)
+        glUniformMatrix4fv(uTextureMatrixLocation, 1, false, mSTMatrix, 0)
+
+        glDrawElements(GL_TRIANGLES, mIndexBuffer.limit(), GL_UNSIGNED_SHORT, mIndexBuffer)
+
+        glFinish()
     }
 
     private fun loadShader(shaderType: Int, source: String): Int {
@@ -223,9 +212,8 @@ class GlRenderer(
 
         if (program != 0) {
             glAttachShader(program, vertexShader)
-//            checkGlError("glAttachShader")
+
             glAttachShader(program, fragmentShader)
-//            checkGlError("glAttachShader")
             glLinkProgram(program)
             val linkStatus = IntArray(1)
 
@@ -244,17 +232,16 @@ class GlRenderer(
         val textures = IntArray(1)
         val texture = textures[0]
         glGenTextures(1, textures, 0)
-//        checkGlError("texture generate")
-        glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texture)
-//        checkGlError("texture bind")
+
+        glBindTexture(GL_TEXTURE_EXTERNAL_OES, texture)
 
         glTexParameterf(
-            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GL_TEXTURE_EXTERNAL_OES,
             GL_TEXTURE_MIN_FILTER,
             GL_NEAREST.toFloat()
         )
         glTexParameterf(
-            GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+            GL_TEXTURE_EXTERNAL_OES,
             GL_TEXTURE_MAG_FILTER,
             GL_LINEAR.toFloat()
         )
@@ -268,7 +255,6 @@ class GlRenderer(
             GL_TEXTURE_WRAP_T,
             GL_CLAMP_TO_EDGE
         )
-
         return texture
     }
 
@@ -292,7 +278,7 @@ class GlRenderer(
     }
 
     private fun shortArrayToBuffer(ar: ShortArray): ShortBuffer {
-        val shortBuffer = ByteBuffer.allocateDirect(ar.size * FLOAT_SIZE_BYTES)
+        val shortBuffer = ByteBuffer.allocateDirect(ar.size * SHORT_SIZE_BYTES)
             .order(ByteOrder.nativeOrder()).asShortBuffer()
         shortBuffer.put(ar).position(0)
         return shortBuffer
