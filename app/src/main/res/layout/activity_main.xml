@@ -7,8 +7,8 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <android.opengl.GLSurfaceView
-        android:id="@+id/glSurfaceView"
+    <com.google.vrtoolkit.cardboard.CardboardView
+        android:id="@+id/cardBoardView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_constraintBottom_toBottomOf="parent"

@@ -92,6 +92,7 @@ class Camera {
         System.arraycopy(p, 0, mProjectionMatrix, 0, p.size)
     }
 
-    fun getProjectionMatrix(): FloatArray? {
+    fun getProjectionMatrix(): FloatArray {
         return mProjectionMatrix
-    }}
+    }
+}
