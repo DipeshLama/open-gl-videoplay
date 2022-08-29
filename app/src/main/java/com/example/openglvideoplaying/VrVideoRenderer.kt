@@ -27,7 +27,6 @@ class VrVideoRenderer(
 ) : CardboardView.StereoRenderer {
     private val FLOAT_PER_BYTES = 4
 
-    //New
     private var mProgramHandle = 0
     private var vPositionLoc = 0
     private var texCoordLoc = 0
@@ -146,9 +145,8 @@ class VrVideoRenderer(
         val textures = IntArray(1)
         val texture = textures[0]
         glGenTextures(1, textures, 0)
-//        checkGlError("texture generate")
+
         glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texture)
-//        checkGlError("texture bind")
 
         glTexParameterf(
             GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
