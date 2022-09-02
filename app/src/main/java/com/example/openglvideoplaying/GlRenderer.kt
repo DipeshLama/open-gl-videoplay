@@ -10,6 +10,7 @@ import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import android.util.Log
 import android.view.Surface
+import android.view.SurfaceView
 import org.videolan.libvlc.LibVLC
 import org.videolan.libvlc.Media
 import org.videolan.libvlc.MediaPlayer
@@ -110,8 +111,15 @@ class GlRenderer(
         surfaceTexture.setOnFrameAvailableListener(frameAvailableListener)
 
 
+        val args = ArrayList<String>().apply {
+            add("-vvv")
+            add("--http-reconnect")
+            add("--aout=opensles")
+            add("--no-drop-late-frames")
+            add("--no-skip-frames")
+        }
 //        mediaPlayer = MediaPlayer()
-        mLibVlc = LibVLC(context)
+        mLibVlc = LibVLC(context, args)
         mediaPlayer = MediaPlayer(mLibVlc)
 
 //        mediaPlayer?.setAudioAttributes(AudioAttributes.Builder()
@@ -120,7 +128,10 @@ class GlRenderer(
         val surface = Surface(surfaceTexture)
 //        mediaPlayer?.setSurface(surface)
 
-        mediaPlayer?.vlcVout?.setVideoSurface(surfaceTexture)
+        val videoOut = mediaPlayer?.vlcVout
+
+        videoOut?.setVideoSurface(surfaceTexture)
+        videoOut?.attachViews()
 
 //        surface.release()
 
@@ -280,7 +291,8 @@ class GlRenderer(
 //        }
 
         try {
-            val media = Media(mLibVlc, context.assets.openFd("videos/sample360.mp4"))
+            val media = Media(mLibVlc, context.assets.openFd("videos/video.mp4"))
+            media.setHWDecoderEnabled(true, false)
             mediaPlayer?.media = media
             media.release()
         } catch (e: Exception) {
