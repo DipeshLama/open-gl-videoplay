@@ -10,6 +10,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url "https://dl.bintray.com/videolan/Android" }
+
     }
 }
 rootProject.name = "Open Gl Video Playing"

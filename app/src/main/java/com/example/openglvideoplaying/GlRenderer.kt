@@ -3,13 +3,16 @@ package com.example.openglvideoplaying
 import android.content.Context
 import android.graphics.SurfaceTexture
 import android.media.AudioAttributes
-import android.media.MediaPlayer
+//import android.media.MediaPlayer
 import android.opengl.GLES11Ext
 import android.opengl.GLES20.*
 import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import android.util.Log
 import android.view.Surface
+import org.videolan.libvlc.LibVLC
+import org.videolan.libvlc.Media
+import org.videolan.libvlc.MediaPlayer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -39,6 +42,7 @@ class GlRenderer(
     private var uTextureMatrixLocation = 0
 
     private var mediaPlayer: MediaPlayer? = null
+    private var mLibVlc: LibVLC? = null
 
     private lateinit var mIndices: ShortArray
 
@@ -61,7 +65,6 @@ class GlRenderer(
     private val mFar = 10.0f
 
     private val GL_TEXTURE_EXTERNAL_OES = 0x8D65
-
 
     init {
         createSphereBuffer(1.0f, 40, 40)
@@ -105,14 +108,21 @@ class GlRenderer(
 
         surfaceTexture = SurfaceTexture(textureId)
         surfaceTexture.setOnFrameAvailableListener(frameAvailableListener)
-        mediaPlayer = MediaPlayer()
 
-        mediaPlayer?.setAudioAttributes(AudioAttributes.Builder()
-            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+
+//        mediaPlayer = MediaPlayer()
+        mLibVlc = LibVLC(context)
+        mediaPlayer = MediaPlayer(mLibVlc)
+
+//        mediaPlayer?.setAudioAttributes(AudioAttributes.Builder()
+//            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
 
         val surface = Surface(surfaceTexture)
-        mediaPlayer?.setSurface(surface)
-        surface.release()
+//        mediaPlayer?.setSurface(surface)
+
+        mediaPlayer?.vlcVout?.setVideoSurface(surfaceTexture)
+
+//        surface.release()
 
         startVideo()
     }
@@ -259,15 +269,25 @@ class GlRenderer(
     }
 
     private fun startVideo() {
+//        try {
+//            mediaPlayer?.reset()
+//            val fd = context.assets.openFd("videos/sample360.mp4")
+//            mediaPlayer?.setDataSource(fd.fileDescriptor, fd.startOffset, fd.length)
+//            mediaPlayer?.prepare()
+//            mediaPlayer?.start()
+//        } catch (e: Exception) {
+//            Log.d(TAG, "startVideo: $e")
+//        }
+
         try {
-            mediaPlayer?.reset()
-            val fd = context.assets.openFd("videos/sample360.mp4")
-            mediaPlayer?.setDataSource(fd.fileDescriptor, fd.startOffset, fd.length)
-            mediaPlayer?.prepare()
-            mediaPlayer?.start()
+            val media = Media(mLibVlc, context.assets.openFd("videos/sample360.mp4"))
+            mediaPlayer?.media = media
+            media.release()
         } catch (e: Exception) {
             Log.d(TAG, "startVideo: $e")
         }
+
+        mediaPlayer?.play()
     }
 
     private fun arrayToBuffer(ar: FloatArray): FloatBuffer {
